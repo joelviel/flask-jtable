@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    # block head
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Example of CRUD operations with flask and jTable">
+    <meta name="author" content="Joël Viellepeau">
+    <title>{% block title %}FLASK-JTABLE{% endblock %}</title>
+    <link rel="icon" href="favicon.ico">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+    # block css
+    # endblock
+    <link rel="stylesheet" href="/css/style.css">
+    # endblock
+  </head>
+  <body>
+
+    <header class="jumbotron text-center">
+      <h1>Exemple d'operations CRUD avec <a href="http://flask.pocoo.org/">flask</a> et <a href="http://www.jtable.org/">jTable</a></h1>
+      <a href="https://github.com/viellepeau/flask-jtable"><i class="glyphicon glyphicon-eye-open"></i> Voir le code source sur GitHub</a>
+    </header>
+
+    <main class="container">
+      # block content
+      # endblock
+    </main>
+    
+    # include 'sign-io.html'
+    # include 'footer.html'
+    
+    # block js
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+    # endblock
+  </body>
+</html>

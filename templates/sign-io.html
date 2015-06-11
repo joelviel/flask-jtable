@@ -1,0 +1,18 @@
+<div style="position:absolute;right:30px;top:20px;">
+	# if not user
+	<a href="{{login_url}}" class="btn btn-warning">Connexion</a>
+	# else
+	<div class="btn-group">
+		<button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+	  		<span class="glyphicon glyphicon-user"></span>
+	  		{{user.email()}}
+	  		<span class="caret"></span>
+		</button>
+		<ul class="dropdown-menu" role="menu"> 
+		  <li><a href="/profile">Voir mon profil</a></li>
+		  <li class="divider"></li>
+		  <li><a href="{{logout_url}}">Déconnexion</a></li>
+		</ul>
+	</div>
+	# endif
+</div>
