@@ -19,10 +19,14 @@ class Customer(ndb.Model):
 
 # Les clés des entités ndb doivent être encodées pour faire la réponse AJAX (sinon jsonify retourne une erreur)
 # Cette fonction encode les clés d'une liste d'entités
-def make_safekey(entities):
+
+
+def encode_key(entity):
+    return dict(entity.to_dict(), **dict(key=entity.key.urlsafe()))
+
+def encode_keys(entities):
     return [dict(e.to_dict(), **dict(key=e.key.urlsafe())) for e in entities]
 
-# Cette fontion permet de décoder une clé ndb reçue depuis le navigateur
 def decode_safekey(safekey):
     return ndb.Key(urlsafe=safekey)
 
@@ -55,45 +59,46 @@ def index():
     return render_template('index.html', **locals())
 
 
-# Lister l'ensemble des clients
-@app.route('/read/customers', methods=['GET', 'POST'])
-def read_customers():
+# Definition of CRUD operation foth the model 'Customer'
+@app.route('/customers', methods=['GET', 'POST', 'PUT', 'REMOVE'])
+def customers():
     
-    # On récupère l'ensemble des records depuis le Datastore
-    customers = Customer.query().fetch()
+    logging.info("hello customers")
+    logging.info(request.method)
 
-    return jsonify(Result='OK', Records=make_safekey(customers))
+    if request.method == "GET" :
 
+        # On récupère l'ensemble des records depuis le Datastore
+        customers = Customer.query().fetch()
+        
+        return jsonify(Result='OK', Records=encode_keys(customers))
 
-# Créer un nouveau client
-@app.route('/create/customer', methods=['GET', 'POST'])
-def create_customer():
-    
+    if request.method == "POST" :
 
         new_customer = form_to_entity(request.form, Customer())
-
         new_customer.put()
+        
+        return jsonify(Result='OK', Record=encode_key(new_customer))
 
-        return jsonify(Result='OK', Record=make_safekey(new_customer))
+    if request.method == "PUT" :
 
+        customer = decode_safekey(request.form['key']).get()
+        customer = form_to_entity(request.form, customer)
+        customer.put()
 
-# Supprimer un client existant
-@app.route('/delete/customer', methods=['GET', 'POST'])
-def delete_customer():
-    
-    decrypt(request.form['key']).delete()
+        return jsonify(Result='OK')
 
-    return jsonify(Result='OK')
+    # if i use 'DELETE' method, the request does not enter the function customers
+    # no idea why it triggers this error
 
+    if request.method == "REMOVE" :
 
-# Mettre à jour un client existant
-@app.route('/update/customer', methods=['GET', 'POST'])
-def update_customer():
-    
-    customer = decrypt(request.form['key']).get()
+        logging.info("hello delete")
 
-    customer = form_to_entity(request.form, customer)
+        decode_safekey(request.form['key']).delete()
+        
+        return jsonify(Result='OK')
 
-    customer.put()
-
-    return jsonify(Result='OK')
+    resp = jsonify(Result="ERROR",  Message="Bad Request")
+    resp.status_code = 400
+    return resp
