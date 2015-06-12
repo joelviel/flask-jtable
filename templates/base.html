@@ -13,12 +13,15 @@
     # endblock
     <link rel="stylesheet" href="/css/style.css">
     # endblock
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
   </head>
   <body>
 
     <header class="jumbotron text-center">
+      # block header
       <h1>Exemple d'operations CRUD avec <a href="http://flask.pocoo.org/">flask</a> et <a href="http://www.jtable.org/">jTable</a></h1>
       <a href="https://github.com/viellepeau/flask-jtable"><i class="glyphicon glyphicon-eye-open"></i> Voir le code source sur GitHub</a>
+      # endblock
     </header>
 
     <main class="container">
@@ -30,7 +33,6 @@
     # include 'footer.html'
     
     # block js
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
     # endblock
   </body>

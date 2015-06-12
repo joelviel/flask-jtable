@@ -1,0 +1,31 @@
+# extends 'base.html'
+
+  # block header
+
+
+  <div style="display:inline-table;width:100%">
+
+    <span style="display:table-cell;width:40%;height:150px;">
+
+      <img src="{{customer_photo or 'default.png'}}" alt="Customer Photo" width="128" height="128">
+
+      <form action="{{upload_url}}" method="POST" enctype="multipart/form-data">
+        <input type="file" id="selectedFile" name="file" style="display:none">
+        <input type="button" value="Choisir" onclick="document.getElementById('selectedFile').click();">
+        <input type="submit" name="submit" value="Submit">
+      </form>
+
+    </span>
+
+    <span class="text-left" style="display:table-cell">
+     <h1>{{customer.last_name}} {{customer.first_name}}</h1>
+    </span>
+
+  </div>
+
+  
+  # endblock
+
+  # block content
+    <h2> Page avec les détails du client </h2>
+  # endblock
