@@ -15,6 +15,20 @@
 
         $('#CustomerTableContainer').jtable({
             title: 'Clients',
+            sorting: true,
+            defaultSorting: 'last_name ASC',
+
+            toolbar: {
+                items: [{
+                    icon: '/img/reset.png',
+                    text: 'Reset',
+                    click: function () {
+                        window.location.href = '/reset_ndb';
+                    }
+                }]
+            },
+
+
             actions: {
                 
                 listAction: function (postData, jtParams) {
@@ -97,8 +111,7 @@
                             success: function (data) {
                                 if (data.Redirect) {
                                     sessionStorage.pendingAction = 'deleteRecord';
-                                    //console.log(sessionStorage.pendingAction);
-                                    //console.log(postData.key);
+                                    // différent des opérations CU
                                     sessionStorage.pendingRecordKey = postData.key;
                                     window.location.href = data.Redirect;
                                     return
@@ -143,7 +156,7 @@
                 if (sessionStorage.pendingAction && Number(sessionStorage.loggedUser)) {
         
                     var options = sessionStorage.pendingAction == 'deleteRecord' ?
-                        // bug avec deleteRecord, elle n'utilisa pas l'url indiquée dans deleteAction 
+                        // bug avec deleteRecord, elle n'utilisera pas l'url indiquée dans deleteAction, donc besoin de l'indiquer ici 
                         {key:sessionStorage.pendingRecordKey, url:'/customers'} :
                         {record:JSON.parse(sessionStorage.pendingRecord)}
 
@@ -156,6 +169,14 @@
 
         // Télécharger les données au chargement de la page pour peupler le tableau
         $('#CustomerTableContainer').jtable('load');
+
+        //Re-load records when user click 'load records' button.
+        $('#LoadRecordsButton').click(function (e) {
+            e.preventDefault();
+            $('#CustomerTableContainer').jtable('load', {
+                last_name:  $('#last-name').val()
+            });
+        });
 
         
     });

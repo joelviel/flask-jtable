@@ -6,12 +6,33 @@
   # endblock
 
   # block content
+
+
+  <form novalidate ng-app>
+    <div class="row control-group">
+      <div class="form-group col-xs-12 floating-label-form-group controls" ng-class="{'floating-label-form-group-with-value':search, 'floating-label-form-group-with-focus':isFocus && !isBlur}">
+          <label>🔎 Rechercher un client par son nom</label>
+          <input type="search" name="last-name" id="last-name" ng-class="{'floating-label-form-group-with-value':search, 'floating-label-form-group-with-focus':isFocus && !isBlur}" class="form-control clear-search" placeholder="🔎 Rechercher un client par son nom" ng-model="search" ng-focus="isFocus=true" ng-blur="isBlur=true" style="color:grey;">
+          <span id="searchclear" class="glyphicon glyphicon-remove-circle" ng-show="search" ng-click="search=''" onclick="
+          $('#last-name').val('');
+          $('#LoadRecordsButton').click();"></span>
+      
+      </div>
+    </div>
+    <button type="submit" id="LoadRecordsButton" style="display:none">OK</button>
+  </form>
+
+  <br>
+
+
+
     <div id="CustomerTableContainer"></div>
   # endblock
 
   # block js
     {{ super() }}
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.16/angular.min.js"></script>
     <script src="jtable/lib/jquery.jtable.min.js"></script>
     <script src="js/customer.jtable.js"></script>
   # endblock

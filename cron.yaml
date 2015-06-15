@@ -1,0 +1,4 @@
+cron:
+- description: reset ndb
+  url: /tasks/reset_ndb
+  schedule: every 24 hours

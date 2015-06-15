@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import logging
+import logging, json, time
 from google.appengine.api import users, app_identity, images
 from google.appengine.ext import ndb, blobstore
 from flask import Flask, render_template, jsonify, request, redirect, make_response
@@ -33,7 +33,7 @@ class Customer(ndb.Model):
     income      = ndb.IntegerProperty(default=0)
     created     = ndb.DateTimeProperty(auto_now_add=True)
     modified    = ndb.DateTimeProperty(auto_now=True)
-    creator     = ndb.UserProperty(required=True)
+    creator     = ndb.UserProperty()
     photo       = ndb.BlobKeyProperty()
 
 #############
@@ -68,6 +68,17 @@ def form_to_entity(form, entity):
     
     return entity
 
+
+def file_to_dictList(filename):
+    file_data = open('static/json/'+filename, 'r')
+    dictList = json.load(file_data)
+    file_data.close()
+    return dictList
+
+
+def clear_ndb(cls_name):
+    cls = eval(cls_name.capitalize())
+    ndb.delete_multi(cls.query().fetch(keys_only=True))
 
 
 ###############
@@ -121,10 +132,31 @@ def customers(safekey=None):
     if request.method == "GET" :
 
         if not safekey:
-            customers = Customer.query(ancestor=ROOT.key).fetch()
+            qry_customers = Customer.query(ancestor=ROOT.key)
+
+            sort = request.args.get('jtSorting')
+            if sort:
+
+                if 'ASC' in sort : sort = 'Customer.'  + sort[:-4]
+                else             : sort = '-Customer.' + sort[:-4]
+
+                qry_customers = qry_customers.order(eval(sort))
+
+            # A utiliser plus tard si besoin
+            filters = list(set(request.args.keys()).intersection(dir(Customer())))
+
+            # Filtre uniquement possible sur l'attribut last_name pour le moment
+            if 'last_name' in filters and request.args.get('last_name'):
+                filter_val_min = request.args.get('last_name')
+                filter_val_max = filter_val_min[:-1] + chr(ord(filter_val_min[-1]) + 1)
+                logging.info(filter_val_max)
+                qry_customers = qry_customers.filter(Customer.last_name >= filter_val_min).filter(Customer.last_name < filter_val_max)
+
+            customers = qry_customers.fetch()
             return jsonify(Result='OK', Records=encode_keys(customers))
 
         else:
+            # Récupération d'une url pour uploader la photo du customer dans le blobstore si besoin
             upload_url = blobstore.create_upload_url('/customers/'+safekey)
             customer = decode_safekey(safekey).get()
             if customer.photo :
@@ -142,28 +174,31 @@ def customers(safekey=None):
             
             customer = decode_safekey(safekey).get()
             f = request.files['file']
-
-            logging.info('hello file')
             
             if f:
                 header = f.headers['Content-Type']
                 parsed_header = parse_options_header(header)
                 bkey_str = parsed_header[1]['blob-key']
                 
+                # si le customer a déjà une photo, on supprime le blob exsitant et on stocke la clé du nouveau blob
                 if customer.photo:
                     blobstore.delete(customer.photo)
-
                 customer.photo = blobstore.BlobKey(bkey_str)
                 customer.put()
+
             return redirect(request.url)
 
     elif request.method == "PUT" :
 
         customer = decode_safekey(request.form['key']).get()
-        customer = form_to_entity(request.form, customer)
-        customer.put()
+        
+        if customer.creator == users.get_current_user() or not customer.creator:
+            customer = form_to_entity(request.form, customer)
+            customer.put()
+            return jsonify(Result='OK')
+        
+        return jsonify(Result='ERROR', Message="Vous ne pouvez modifier que les valeurs par défaut ou vos crations")
 
-        return jsonify(Result='OK')
 
     # Bug si utilisation de la méthode DELETE (la route n'est pas trouvée)
     elif request.method == "REMOVE" :
@@ -185,3 +220,17 @@ def img(bkey):
     response = make_response(blob_info.open().read())
     response.headers['Content-Type'] = blob_info.content_type
     return response
+
+@app.route("/tasks/reset_ndb")
+@app.route("/reset_ndb")
+def reset_ndb():
+    start_time = time.time()
+    clear_ndb('customer')
+    default_customers = file_to_dictList('default_customers.json')
+    ndb.put_multi([form_to_entity(d, Customer(parent=ROOT.key, creator=None)) for d in default_customers])
+    
+    if 'task' in request.url:
+        return jsonify(exec_time = time.time() - start_time)
+
+    else:
+        return redirect('/')

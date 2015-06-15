@@ -13,6 +13,7 @@ handlers:
 
 - url: /
   static_dir: static
+  application_readable: true
 
 libraries:
 - name: jinja2

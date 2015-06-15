@@ -1,0 +1,58 @@
+html(lang='en',ng-app='StarterApp')
+  body(layout='column',ng-controller='AppCtrl')
+    .main-fab
+      md-button.md-fab.md-accent +
+    md-toolbar.md-tall(layout='column')
+      span(flex)
+      .md-toolbar-tools
+        .fill-height(layout='row',flex)
+          .md-toolbar-item.md-breadcrumb(ng-hide='toggleSearch')
+            span Angular Material Table
+          span(flex,ng-hide='toggleSearch')
+          md-input-container(flex,style='padding-left:88px;',ng-show='toggleSearch')
+            input(type='text',ng-model='search')
+          .md-toolbar-item.md-tools(layout='row')
+            a.md-button.md-default-theme(href, ng-click='toggleSearch = !toggleSearch')
+              i.ion-android-search
+    md-content(layout='column',flex,ng-click='toggleSearch=false')
+      md-table(headers="headers", content="content", sortable="sortable", filters="search", custom-class="custom", thumbs="thumbs", count="count")
+      
+// md-table jade template
+#md-table-template(ng-hide='true')
+  table.md-table(md-colresize)
+      thead
+          tr.md-table-headers-row
+              th.md-table-header(ng-repeat='h in headers')
+                  a(href='#',ng-if='handleSort(h.field)',ng-click='reverse=!reverse;order(h.field,reverse)') {{h.name}} 
+                      i.ion-android-arrow-dropup(ng-show='reverse && h.field == predicate')
+                      i.ion-android-arrow-dropdown(ng-show='!reverse && h.field == predicate')
+                  span(ng-if='!handleSort(h.field)') {{h.name}}
+              th.md-table-header
+      tbody
+          tr.md-table-content-row(ng-repeat='c in content | filter:filters | startFrom:tablePage*count | limitTo: count')
+              td
+                .md-table-thumbs(ng-repeat='h in headers',ng-if='h.field == thumbs')
+                  div(style="background-image:url({{c.thumb}})")
+              td.md-table-content(ng-repeat='h in headers',ng-class='customClass[h.field]',ng-if='h.field != thumbs') {{(h.field.indexOf('date') > 0) ? $filter('date')(c[h.field]) : c[h.field];}}
+              td.md-table-td-more
+                  md-button(aria-label='Info')
+                      i.ion-android-more-vertical
+  .md-table-footer(layout="row")
+      span.md-table-count-info Rows per page : 
+          a(href='#',ng-click='goToPage(0); count=10') 10
+          | ,
+          a(href='#',ng-click='goToPage(0); count=25') 25
+          | ,
+          a(href='#',ng-click='goToPage(0); count=50') 50
+          | ,
+          a(href='#',ng-click='goToPage(0); count=100') 100
+          | (current is {{count}})
+      span(flex)
+      span(ng-show='nbOfPages() > 1')
+          md-button.md-primary.md-hue-2(ng-disabled='tablePage==0',ng-click='tablePage=tablePage-1',aria-label='Previous Page')
+              i.ion-chevron-left(style="font-size:16px;")
+          a(href='#',ng-repeat='i in getNumber(nbOfPages()) track by $index')
+              md-button.md-primary.md-hue-2.md-table-footer-item(ng-click='goToPage($index)')
+                  span(ng-class="{ 'md-table-active-page': tablePage==$index}") {{$index+1}}
+          md-button.md-primary.md-hue-2(ng-disabled='tablePage==nbOfPages()-1',ng-click='tablePage=tablePage+1',aria-label='Next Page')
+              i.ion-chevron-right(style="font-size:16px;")
