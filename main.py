@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import logging, json, time
+import logging, json, time, requests
 from google.appengine.api import users, app_identity, images
 from google.appengine.ext import ndb, blobstore
 from flask import Flask, render_template, jsonify, request, redirect, make_response
@@ -30,11 +30,14 @@ ROOT =  Root.get_or_insert(app_identity.get_application_id())
 class Customer(ndb.Model):
     last_name   = ndb.StringProperty(validator=lambda p, v: v.capitalize() or '-')
     first_name  = ndb.StringProperty(validator=lambda p, v: v.capitalize() or '-')
+    address     = ndb.JsonProperty(default=dict(city=None, state=None, street=None, zip=None))
     income      = ndb.IntegerProperty(default=0)
     created     = ndb.DateTimeProperty(auto_now_add=True)
     modified    = ndb.DateTimeProperty(auto_now=True)
-    creator     = ndb.UserProperty()
+    creator     = ndb.UserProperty(default=None)
     photo       = ndb.BlobKeyProperty()
+    photo_url   = ndb.StringProperty(default='/img/default.png')
+    phone       = ndb.StringProperty()
 
 #############
 # Fonctions #
@@ -68,6 +71,22 @@ def form_to_entity(form, entity):
     
     return entity
 
+def userApi_to_entity(result, entity):
+    
+    entity.last_name    = user['name']['last']
+    entity.first_name   = user['name']['first']
+
+    entity.address['city']      = user['location']['city']
+    entity.address['state']     = user['location']['state']
+    entity.address['street']    = user['location']['street']
+    entity.address['zip']       = user['location']['state']
+
+    entity.photo_url    = user['picture']['medium']
+
+    entity.phone        = user['phone']
+    
+    return entity
+
 
 def file_to_dictList(filename):
     '''Retourne une liste de dicionnaire à partir d'un fichier contenant une liste d'objets JSON'''
@@ -81,6 +100,14 @@ def clear_ndb(cls_name):
     '''Supprime toutes les entités de type cls_name dans la ndb'''
     cls = eval(cls_name.capitalize())
     ndb.delete_multi(cls.query().fetch(keys_only=True))
+
+def get_default_customers():
+    '''Use Random User Generator API to get default_customers'''
+    url = "http://api.randomuser.me/?results=25"
+    headers = {'User-agent': 'Mozilla/5.0'}
+    req = requests.get(url, headers=headers)
+    return json.loads(req.content)
+    #return req.content
 
 
 ###############
@@ -133,15 +160,18 @@ def customers(safekey=None):
             
             qry_customers = Customer.query(ancestor=ROOT.key)
 
+            # Mauvais idée de faire le tri avec order car on ne peut pas filtrer sur l'attribut 1 et faire un tri sur l'attribut 2
+            # ==> ERR:The first sort property must be the same as the property to which the inequality filter is applied.  In your query the first sort property is first_name but the inequality filter is on last_name
+            # ==> on tri donc les attributs après le fetch avec la fonction native python sort
             sort = request.args.get('jtSorting')
-            if sort:
+            # if sort:
 
-                if 'ASC' in sort : sort = 'Customer.'  + sort[:-4]
-                else             : sort = '-Customer.' + sort[:-4]
+            #     if 'ASC' in sort : sort = 'Customer.'  + sort[:-4]
+            #     else             : sort = '-Customer.' + sort[:-4]
 
-                qry_customers = qry_customers.order(eval(sort))
+            #     qry_customers = qry_customers.order(eval(sort))
 
-            # A utiliser plus tard si besoin
+            # A utiliser plus tard si besoin. On repère toutes les demandes de filtre en repérant les params portant un nom d'attribut
             filters = list(set(request.args.keys()).intersection(dir(Customer())))
 
             # Filtre uniquement possible sur l'attribut last_name pour le moment
@@ -152,6 +182,10 @@ def customers(safekey=None):
                 qry_customers = qry_customers.filter(Customer.last_name >= filter_val_min).filter(Customer.last_name < filter_val_max)
 
             customers = qry_customers.fetch()
+
+            if sort:
+                customers.sort(key=lambda x: getattr(x,sort.split(' ')[0]), reverse='DESC' in sort)
+
             return jsonify(Result='OK', Records=encode_keys(customers))
 
         else:
