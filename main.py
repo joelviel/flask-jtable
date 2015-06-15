@@ -70,6 +70,7 @@ def form_to_entity(form, entity):
 
 
 def file_to_dictList(filename):
+    '''Retourne une liste de dicionnaire à partir d'un fichier contenant une liste d'objets JSON'''
     file_data = open('static/json/'+filename, 'r')
     dictList = json.load(file_data)
     file_data.close()
@@ -77,6 +78,7 @@ def file_to_dictList(filename):
 
 
 def clear_ndb(cls_name):
+    '''Supprime toutes les entités de type cls_name dans la ndb'''
     cls = eval(cls_name.capitalize())
     ndb.delete_multi(cls.query().fetch(keys_only=True))
 
@@ -107,16 +109,12 @@ def login_required_for_CUD(f):
 
 @app.route('/')
 def index():
-    '''Fontion qui renvoie la page d'index. 
+    '''Fonction qui renvoie la page d'index. 
     Les infos de l'utilisateur sont récupérés via l'API Google users'''
 
     user        = users.get_current_user()
     login_url   = users.create_login_url('/')
     logout_url  = users.create_logout_url('/')
-
-    ROOT =  Root.get_or_insert(app_identity.get_application_id())
-
-    #root_photo = ROOT.
 
     return render_template('index.html', **locals())
 
@@ -132,6 +130,7 @@ def customers(safekey=None):
     if request.method == "GET" :
 
         if not safekey:
+            
             qry_customers = Customer.query(ancestor=ROOT.key)
 
             sort = request.args.get('jtSorting')
