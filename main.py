@@ -7,6 +7,7 @@ from google.appengine.ext import ndb, blobstore
 from flask import Flask, render_template, jsonify, request, redirect, make_response
 from functools import wraps
 from werkzeug.http import parse_options_header
+from random import randint
 
 
 app = Flask(__name__)
@@ -71,19 +72,19 @@ def form_to_entity(form, entity):
     
     return entity
 
-def userApi_to_entity(result, entity):
+def fakeUser_to_entity(result, entity):
     
-    entity.last_name    = user['name']['last']
-    entity.first_name   = user['name']['first']
+    entity.last_name    = result['user']['name']['last']
+    entity.first_name   = result['user']['name']['first']
 
-    entity.address['city']      = user['location']['city']
-    entity.address['state']     = user['location']['state']
-    entity.address['street']    = user['location']['street']
-    entity.address['zip']       = user['location']['state']
+    for key in ('city', 'state', 'street', 'zip'):
+        entity.address[key] = result['user']['location'].get(key)
 
-    entity.photo_url    = user['picture']['medium']
+    entity.photo_url    = result['user']['picture']['medium']
 
-    entity.phone        = user['phone']
+    entity.phone        = result['user']['phone']
+
+    entity.income = randint(0,9) * int(entity.address['zip']) / (10*randint(1,9))
     
     return entity
 
@@ -194,6 +195,8 @@ def customers(safekey=None):
             customer = decode_safekey(safekey).get()
             if customer.photo :
                 customer_photo =  images.get_serving_url(customer.photo, size=128, crop=False, secure_url=None)
+            else:
+                customer_photo = customer.photo_url
             return render_template('customer-details.html', **locals())
 
     elif request.method == "POST" :
@@ -259,11 +262,21 @@ def img(bkey):
 def reset_ndb():
     start_time = time.time()
     clear_ndb('customer')
-    default_customers = file_to_dictList('default_customers.json')
-    ndb.put_multi([form_to_entity(d, Customer(parent=ROOT.key, creator=None)) for d in default_customers])
     
+    # deprecated, use api user instead
+    # default_customers = file_to_dictList('default_customers.json')
+    # ndb.put_multi([form_to_entity(d, Customer(parent=ROOT.key, creator=None)) for d in default_customers])
+    
+    default_customers = get_default_customers()
+    ndb.put_multi([fakeUser_to_entity(d, Customer(parent=ROOT.key, creator=None)) for d in default_customers['results']])
+
     if 'task' in request.url:
         return jsonify(exec_time = time.time() - start_time)
 
     else:
         return redirect('/')
+
+@app.route("/fakeUser")
+def fake_user():
+    default_customers = get_default_customers()
+    return jsonify(FAKEUSER=default_customers)

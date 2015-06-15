@@ -18,7 +18,9 @@
     </span>
 
     <span class="text-left" style="display:table-cell">
-     <h1>{{customer.last_name}} {{customer.first_name}}</h1>
+      <h1><strong>{{customer.last_name}}</strong> {{customer.first_name}}</h1>
+      <h2>{{customer.address.street|title}}</h2>
+      <h2>{{customer.address.zip}} {{customer.address.city|title}}</h2>
     </span>
 
   </div>
